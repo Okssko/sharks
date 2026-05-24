@@ -1,0 +1,1014 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sharks! – Sophia Wilson</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,600;0,700;1,300;1,600&family=Barlow+Condensed:wght@300;400;600;700;900&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --gold: #e8a827;
+            --blue: #1a8fe0;
+            --blue-dim: rgba(26, 143, 224, 0.55);
+            --teal: #0eb8b8;
+            --glass: rgba(4, 14, 30, 0.68);
+            --blur: blur(26px) saturate(1.4);
+            --blur-lt: blur(22px) saturate(1.3);
+        }
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0
+        }
+
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #040e1e;
+            font-family: 'Barlow Condensed', sans-serif
+        }
+
+        .deck {
+            position: relative;
+            width: 100vw;
+            height: 100vh
+        }
+
+        .slide {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity .8s ease;
+            z-index: 1
+        }
+
+        .slide.active {
+            opacity: 1;
+            pointer-events: all;
+            z-index: 3
+        }
+
+        .slide.prev-out {
+            opacity: 0;
+            z-index: 2
+        }
+
+        /* FULL BLEED */
+        .bg {
+            position: absolute;
+            inset: 0;
+            z-index: 0
+        }
+
+        .bg img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block
+        }
+
+        .bg-tint {
+            position: absolute;
+            inset: 0
+        }
+
+        .panel-center {
+            position: absolute;
+            inset: 0;
+            z-index: 2;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+        }
+
+        /* Glass panels: no fixed max-height, no overflow-y scroll — they grow with content */
+        .glass {
+            background: var(--glass);
+            backdrop-filter: var(--blur);
+            -webkit-backdrop-filter: var(--blur);
+            border: 1px solid rgba(255, 255, 255, 0.13);
+            border-radius: 6px;
+            padding: 52px 68px;
+            max-width: 820px;
+            width: 100%;
+            text-align: center;
+        }
+
+       .panel-side-r {
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    z-index: 2;
+    width: min(720px, 50vw);        /* wider panel */
+    display: flex;
+    align-items: center;
+    padding: 20px 24px;             /* less padding = more room */
+}
+
+.panel-side-l {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    z-index: 2;
+    width: min(920px, 50vw);
+    display: flex;
+    align-items: center;
+    padding: 20px 24px;
+}
+
+        /* tall-glass: fits its content, no internal scroll */
+        .tall-glass {
+            width: 100%;
+            background: var(--glass);
+            backdrop-filter: var(--blur);
+            -webkit-backdrop-filter: var(--blur);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 6px;
+            padding: 32px 28px;
+        }
+
+        /* SPLIT */
+        .split-slide {
+            display: flex;
+            width: 100%;
+            height: 100%;
+            background: #04101e
+        }
+
+        .split-slide.light {
+            background: #dff0f7
+        }
+
+        /* Image column: shrunk to fit image tightly */
+        .img-col {
+            flex: 0 0 38%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 28px 12px 28px 28px;
+            background: #04101e;
+        }
+
+        .img-col.right {
+            padding: 28px 28px 28px 12px;
+            order: 2
+        }
+
+        .split-slide.light .img-col {
+            background: #dff0f7
+        }
+
+        /* img-frame: sized to hug the image, not fill the whole column */
+        .img-frame {
+            position: relative;
+            width: 100%;
+            /* Height determined by image aspect ratio, not stretched to full column */
+            aspect-ratio: 3 / 4;
+            max-height: calc(100vh - 80px);
+            border: 2px solid rgba(26, 143, 224, 0.45);
+            border-radius: 6px;
+            overflow: hidden;
+            background: #030c1a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .split-slide.light .img-frame {
+            background: #b8dff0;
+            border-color: rgba(14, 184, 184, 0.5)
+        }
+
+        .img-frame img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center center;
+            display: block
+        }
+
+        .img-frame::before,
+        .img-frame::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border-color: var(--blue);
+            border-style: solid;
+            opacity: .55;
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        .img-frame::before {
+            top: 9px;
+            left: 9px;
+            border-width: 2px 0 0 2px
+        }
+
+        .img-frame::after {
+            bottom: 9px;
+            right: 9px;
+            border-width: 0 2px 2px 0
+        }
+
+        .txt-col {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            padding: 32px 40px 32px 20px;
+            background: #04101e;
+        }
+
+        .txt-col.left-text {
+            padding: 32px 20px 32px 40px;
+            order: 1
+        }
+
+        .split-slide.light .txt-col {
+            background: #dff0f7
+        }
+
+        /* txt-inner: no max-height cap, no scroll — content is king */
+        .txt-inner {
+            width: 100%;
+        }
+
+        /* TYPE */
+        .eyebrow {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: clamp(.72rem, 1.15vw, .92rem);
+            font-weight: 300;
+            letter-spacing: .35em;
+            text-transform: uppercase;
+            color: var(--teal);
+            opacity: .9;
+            margin-bottom: 14px;
+        }
+
+        .eyebrow.lt {
+            color: #0a7070
+        }
+
+        .h-giant {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: clamp(3.8rem, 9.5vw, 8.5rem);
+            font-weight: 700;
+            line-height: .95;
+            letter-spacing: -.02em;
+            color: #fff;
+        }
+
+        .h-giant em {
+            color: var(--blue);
+            font-style: normal
+        }
+
+        .h-large {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: clamp(2.2rem, 4vw, 3.6rem);
+            font-weight: 700;
+            line-height: 1.02;
+            letter-spacing: -.015em;
+            color: #fff;
+        }
+
+        .h-large em {
+            color: var(--blue);
+            font-style: normal
+        }
+
+        .h-large.ck {
+            color: #071e30
+        }
+
+        .h-large.ck em {
+            color: #0a6a9e
+        }
+
+        .sub {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: clamp(1rem, 1.9vw, 1.65rem);
+            font-weight: 300;
+            font-style: italic;
+            color: rgba(255, 255, 255, .7);
+            line-height: 1.5;
+            margin-top: 12px;
+        }
+
+        .sub.ck {
+            color: rgba(5, 30, 50, .62)
+        }
+
+        .rule {
+            width: 58px;
+            height: 2px;
+            background: var(--blue);
+            border: none;
+            margin: 16px 0
+        }
+
+        .rule.c {
+            margin: 16px auto
+        }
+
+        .rule.lt {
+            background: #0a6a9e
+        }
+
+        /* Bullet list: larger, easier to read */
+        .blist {
+            list-style: none;
+            margin-top: 14px
+        }
+
+        .blist li {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, .08);
+            font-size: clamp(1rem, 1.6vw, 1.3rem);
+            font-weight: 300;
+            color: rgba(255, 255, 255, .9);
+            line-height: 1.5;
+        }
+
+        .blist.lt li {
+            border-bottom-color: rgba(0, 0, 0, .1);
+            color: rgba(4, 20, 40, .82)
+        }
+
+        .blist li:last-child,
+        .blist.lt li:last-child {
+            border-bottom: none
+        }
+
+        .blist li .dot {
+            color: var(--teal);
+            font-size: 1.1rem;
+            flex-shrink: 0;
+            margin-top: 4px;
+            line-height: 1
+        }
+
+        .blist.lt li .dot {
+            color: #0a7070
+        }
+
+        .blist li strong {
+            color: #fff;
+            font-weight: 600
+        }
+
+        .blist.lt li strong {
+            color: #041828
+        }
+
+        .igrid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 14px
+        }
+
+        .icard {
+            background: rgba(255, 255, 255, .07);
+            border: 1px solid rgba(255, 255, 255, .1);
+            border-radius: 5px;
+            padding: 13px 14px;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .icard .ico {
+            font-size: 1.3rem;
+            flex-shrink: 0;
+            line-height: 1;
+            margin-top: 2px
+        }
+
+        .icard .ib strong {
+            display: block;
+            font-size: .65rem;
+            letter-spacing: .14em;
+            text-transform: uppercase;
+            color: var(--teal);
+            margin-bottom: 3px;
+            font-weight: 400;
+        }
+
+        .icard .ib p {
+            font-size: clamp(.9rem, 1.4vw, 1.1rem);
+            color: rgba(255, 255, 255, .85);
+            line-height: 1.4;
+            font-weight: 300
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 7px 20px;
+            border: 1.5px solid var(--blue-dim);
+            border-radius: 100px;
+            font-size: clamp(.7rem, 1.1vw, .92rem);
+            letter-spacing: .17em;
+            text-transform: uppercase;
+            color: var(--blue);
+            margin-top: 18px;
+        }
+
+        .badge.tl {
+            border-color: rgba(14, 184, 184, .45);
+            color: var(--teal)
+        }
+
+        .qblock {
+            border-left: 3px solid var(--blue);
+            padding: 11px 18px;
+            margin-top: 16px
+        }
+
+        .qblock p {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: clamp(1rem, 1.7vw, 1.45rem);
+            font-style: italic;
+            line-height: 1.5;
+            color: rgba(255, 255, 255, .84);
+        }
+
+        .qblock small {
+            display: block;
+            margin-top: 4px;
+            font-size: .66rem;
+            letter-spacing: .17em;
+            text-transform: uppercase;
+            color: var(--teal);
+            opacity: .8
+        }
+
+        /* NAV */
+        .arrow {
+            position: fixed;
+            top: 80%;
+            transform: translateY(-50%);
+            z-index: 300;
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            border: 1.5px solid rgba(255, 255, 255, .2);
+            background: rgba(0, 0, 0, .38);
+            backdrop-filter: blur(12px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: rgba(255, 255, 255, .72);
+            font-size: 1.3rem;
+            transition: all .25s;
+            outline: none;
+        }
+
+        .arrow:hover {
+            border-color: var(--blue);
+            background: rgba(26, 143, 224, .15);
+            color: var(--blue);
+            transform: translateY(-50%) scale(1.08)
+        }
+
+        .arrow.prev {
+            left: 18px
+        }
+
+        .arrow.next {
+            right: 18px
+        }
+
+        .arrow.hidden {
+            opacity: 0;
+            pointer-events: none
+        }
+
+        .counter {
+            position: fixed;
+            bottom: 22px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 8px;
+            z-index: 200
+        }
+
+        .dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, .22);
+            transition: .3s;
+            cursor: pointer;
+            border: none;
+            outline: none
+        }
+
+        .dot.on {
+            background: var(--blue);
+            transform: scale(1.4)
+        }
+
+        .snum {
+            position: fixed;
+            bottom: 20px;
+            right: 26px;
+            font-size: .65rem;
+            letter-spacing: .2em;
+            color: rgba(255, 255, 255, .2);
+            z-index: 200
+        }
+
+        .pres-label {
+            position: fixed;
+            top: 20px;
+            right: 26px;
+            font-size: .65rem;
+            letter-spacing: .22em;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, .26);
+            z-index: 200
+        }
+
+        /* Video Background for Last Slide */
+.bg video.bg-video {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    z-index: 0;
+}
+
+/* Make sure tint is above the video */
+.bg .bg-tint {
+    z-index: 1;
+}
+
+        @keyframes rise {
+            from {
+                opacity: 0;
+                transform: translateY(22px)
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0)
+            }
+        }
+
+        .slide.active .a1 {
+            animation: rise .55s .08s both
+        }
+
+        .slide.active .a2 {
+            animation: rise .55s .2s both
+        }
+
+        .slide.active .a3 {
+            animation: rise .55s .32s both
+        }
+
+        .slide.active .a4 {
+            animation: rise .55s .44s both
+        }
+
+        .slide.active .a5 {
+            animation: rise .55s .56s both
+        }
+
+        @media(max-width:700px) {
+            .img-col {
+                display: none
+            }
+
+            .txt-col,
+            .txt-col.left-text {
+                padding: 24px 20px;
+                order: 1;
+                flex: 1
+            }
+
+            .igrid {
+                grid-template-columns: 1fr
+            }
+
+            .panel-side-r,
+            .panel-side-l {
+                width: 100%;
+                padding: 16px
+            }
+
+            .glass {
+                padding: 32px 24px
+            }
+
+            .arrow {
+                width: 42px;
+                height: 42px;
+                font-size: 1rem
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="pres-label">Sophia Wilson</div>
+    <button class="arrow prev hidden" id="btnPrev">&#8592;</button>
+    <button class="arrow next" id="btnNext">&#8594;</button>
+    <div class="counter" id="counter"></div>
+    <div class="snum" id="slideNum"></div>
+
+    <div class="deck" id="deck">
+
+        <!-- SLIDE 1 · TITLE — full bleed -->
+        <section class="slide active" data-index="0">
+            <div class="bg">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/56/White_shark.jpg/1280px-White_shark.jpg"
+                    alt="Great white shark underwater" loading="eager">
+                <div class="bg-tint"
+                    style="background:linear-gradient(160deg,rgba(2,10,25,.82) 0%,rgba(2,10,25,.32) 100%)"></div>
+            </div>
+            <div class="panel-center">
+                <div class="glass" style="max-width:800px">
+                    <p class="eyebrow a1">A Student Presentation by Sophia Wilson</p>
+                    <h1 class="h-giant a2">Amazing<br><em>Sharks!</em></h1>
+                    <hr class="rule c a3">
+                    <p class="sub a4">The Ocean's Most Fascinating Creatures</p>
+                    <span class="badge tl a5">🦈 Ocean Predators ·</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- SLIDE 2 · WHAT IS A SHARK — split -->
+        <section class="slide" data-index="1">
+            <div class="split-slide">
+                <div class="img-col">
+                    <div class="img-frame">
+                        <img src="img/pexels-lachlan-ross-5967796.jpg"
+                            alt="Great white shark side view">
+                    </div>
+                </div>
+                <div class="txt-col">
+                    <div class="txt-inner">
+                        <p class="eyebrow a1">Slide 2 — Meet the Shark</p>
+                        <h2 class="h-large a2">What Is a <em>Shark?</em></h2>
+                        <hr class="rule a3">
+                        <ul class="blist a4">
+                            <li><span class="dot">▸</span>Sharks are <strong>fish</strong> — but very special ones. They
+                                have been on Earth for over <strong>450 million years!</strong></li>
+                            <li><span class="dot">▸</span>That means sharks are <em style="color:var(--teal)">older than
+                                    dinosaurs.</em></li>
+                            <li><span class="dot">▸</span>Their skeletons are made of <strong>cartilage</strong>, not
+                                bone — the same material as your nose and ears.</li>
+                            <li><span class="dot">▸</span>There are over <strong>500 different species</strong> of
+                                sharks in the ocean.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SLIDE 3 · AMAZING BODY — split -->
+        <section class="slide" data-index="2">
+            <div class="split-slide">
+                <div class="txt-col left-text">
+                    <div class="txt-inner">
+                        <p class="eyebrow a1">Slide 3 — Super Powers</p>
+                        <h2 class="h-large a2">Their Amazing <em>Bodies</em></h2>
+                        <hr class="rule a3">
+                        <ul class="blist a4">
+                            <li><span class="dot">⚡</span>Sharks can smell a <strong>single drop of blood</strong> from
+                                over 1 km away!</li>
+                            <li><span class="dot">⚡</span>They have a special sense called the <strong>"sixth
+                                    sense"</strong> — they can detect electricity from other animals.</li>
+                            <li><span class="dot">⚡</span>Sharks grow <strong>thousands of teeth</strong> in their
+                                lifetime — new ones grow in when old ones fall out.</li>
+                            <li><span class="dot">⚡</span>Their skin feels like <strong>sandpaper</strong> and is
+                                covered in tiny tooth-like scales.</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="img-col right">
+                    <div class="img-frame">
+                        <img src="img/pexels-glenda-2788337-4438343.jpg"
+                            alt="Great white shark close up showing teeth">
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SLIDE 4 · TYPES OF SHARKS — full bleed -->
+        <section class="slide" data-index="3">
+            <div class="bg">
+                <img src="img/nature-pix-orca-3592559_1920.jpg"
+                    alt="Whale shark swimming">
+                <div class="bg-tint"
+                    style="background:linear-gradient(to right,rgba(0,0,0,.06) 22%,rgba(4,14,30,.86) 60%,rgba(4,14,30,.97) 100%)">
+                </div>
+            </div>
+            <div class="panel-side-r">
+                <div class="tall-glass">
+                    <p class="eyebrow a1">Slide 4 — Different Sharks</p>
+                    <h2 class="h-large a2">Types of <em>Sharks</em></h2>
+                    <hr class="rule a3">
+                    <ul class="blist a4">
+                        <li><span class="dot">🦈</span><strong>Great White Shark</strong> — the most famous. Can grow to
+                            6 metres long!</li>
+                        <li><span class="dot">🦈</span><strong>Whale Shark</strong> — the biggest fish on Earth. It eats
+                            only tiny plankton.</li>
+                        <li><span class="dot">🦈</span><strong>Hammerhead Shark</strong> — has a very wide, flat head
+                            shaped like a hammer.</li>
+                        <li><span class="dot">🦈</span><strong>Dwarf Lanternshark</strong> — the smallest shark, only 20
+                            cm long — fits in your hand!</li>
+                    </ul>
+                    <span class="badge tl a5">500+ species worldwide 🌊</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- SLIDE 5 · WHAT SHARKS EAT — split -->
+        <section class="slide" data-index="4">
+            <div class="split-slide">
+                <div class="img-col">
+                    <div class="img-frame">
+                        <img src="img/pexels-ben-phillips-3129726-4781942.jpg"
+                            alt="Hammerhead shark swimming">
+                    </div>
+                </div>
+                <div class="txt-col">
+                    <div class="txt-inner">
+                        <p class="eyebrow a1">Slide 5 — Feeding</p>
+                        <h2 class="h-large a2">What Do Sharks <em>Eat?</em></h2>
+                        <hr class="rule a3">
+                        <div class="igrid a4">
+                            <div class="icard"><span class="ico">🐟</span>
+                                <div class="ib"><strong>Fish & Squid</strong>
+                                    <p>Most sharks eat fish, squid, and other sea creatures.</p>
+                                </div>
+                            </div>
+                            <div class="icard"><span class="ico">🦭</span>
+                                <div class="ib"><strong>Seals & Sea Lions</strong>
+                                    <p>Great whites hunt seals near coastlines.</p>
+                                </div>
+                            </div>
+                            <div class="icard"><span class="ico">🔬</span>
+                                <div class="ib"><strong>Tiny Plankton</strong>
+                                    <p>The biggest sharks — whale & basking — eat only microscopic plankton!</p>
+                                </div>
+                            </div>
+                            <div class="icard"><span class="ico">🦀</span>
+                                <div class="ib"><strong>Crabs & Shellfish</strong>
+                                    <p>Bottom-dwelling sharks eat crabs on the seafloor.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SLIDE 6 · ARE SHARKS DANGEROUS — light split -->
+        <section class="slide" data-index="5">
+            <div class="split-slide light">
+                <div class="txt-col left-text">
+                    <div class="txt-inner">
+                        <p class="eyebrow lt a1">Slide 6 — The Truth</p>
+                        <h2 class="h-large ck a2">Are Sharks <em>Dangerous?</em></h2>
+                        <hr class="rule lt a3">
+                        <ul class="blist lt a4">
+                            <li><span class="dot" style="color:#0a7070">▸</span>Sharks <strong>rarely</strong> attack
+                                humans. You are more likely to be struck by lightning!</li>
+                            <li><span class="dot" style="color:#0a7070">▸</span>Most attacks happen because a shark
+                                <strong>mistakes</strong> a swimmer for a seal.</li>
+                            <li><span class="dot" style="color:#0a7070">▸</span>Humans are actually far more dangerous
+                                to sharks — we kill around <strong>100 million sharks</strong> every year.</li>
+                            <li><span class="dot" style="color:#0a7070">★</span>Many shark species are now
+                                <strong>endangered</strong> and need our protection.</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="img-col right">
+                    <div class="img-frame">
+                        <img src="img/pexels-charlotte-youlten-2391790-8019037.jpg"
+                            alt="Nurse shark resting peacefully">
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SLIDE 7 · COOL STORIES — full bleed -->
+        <section class="slide" data-index="6">
+            <div class="bg">
+                <img src="img/pexels-rockwell-branding-agency-85164430-8910272.jpg"
+                    alt="Shark underwater">
+                <div class="bg-tint"
+                    style="background:linear-gradient(to left,rgba(0,0,0,.06) 22%,rgba(4,14,30,.86) 60%,rgba(4,14,30,.97) 100%)">
+                </div>
+            </div>
+            <div class="panel-side-l">
+                <div class="tall-glass">
+                    <p class="eyebrow a1">Slide 7 — Amazing Stories</p>
+                    <h2 class="h-large a2">Cool Shark <em>Stories</em></h2>
+                    <hr class="rule a3">
+                    <ul class="blist a4">
+                        <li><span class="dot">🌟</span><strong>Deep Blue</strong> is the largest great white shark ever
+                            filmed — she is about 6 metres long and believed to be over 50 years old!</li>
+                        <li><span class="dot">🌟</span>A shark called <strong>"Lydia"</strong> was the first great white
+                            tracked swimming all the way across the Atlantic Ocean.</li>
+                        <li><span class="dot">🌟</span>Sharks <strong>never get cancer</strong> — scientists are
+                            studying them to help find cures for humans.</li>
+                        <li><span class="dot">🌟</span>Some sharks <strong>glow in the dark</strong> in the deep ocean
+                            using a special chemical in their skin!</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- SLIDE 8 · SHARKS & OCEAN — split -->
+        <section class="slide" data-index="7">
+            <div class="split-slide">
+                <div class="img-col">
+                    <div class="img-frame">
+                        <img src="img/pexels-alohaphotostudio-11348767.jpg"
+                            alt="Oceanic whitetip shark">
+                    </div>
+                </div>
+                <div class="txt-col">
+                    <div class="txt-inner">
+                        <p class="eyebrow a1">Slide 8 — Why They Matter</p>
+                        <h2 class="h-large a2">Sharks &amp; the <em>Ocean</em></h2>
+                        <hr class="rule a3">
+                        <ul class="blist a4">
+                            <li><span class="dot">🌊</span>Sharks are <strong>apex predators</strong> — they sit at the
+                                very top of the food chain.</li>
+                            <li><span class="dot">🌊</span>Without sharks, fish populations would <strong>explode out of
+                                    control</strong> and damage coral reefs.</li>
+                            <li><span class="dot">🌊</span>Healthy oceans need healthy shark populations — they keep the
+                                whole <strong>ecosystem balanced.</strong></li>
+                            <li><span class="dot">🌊</span>Protecting sharks means <strong>protecting our
+                                    oceans</strong> — and our planet.</li>
+                        </ul>
+                        <div class="qblock a5">
+                            <p>"Sharks are beautiful animals, and if you're lucky enough to see lots of them, that means
+                                the ecosystem is healthy."</p>
+                            <small>— Dr Sylvia Earle, Ocean Explorer</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SLIDE 9 · FUN FACTS — full bleed -->
+        <section class="slide" data-index="8">
+            <div class="bg">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/56/White_shark.jpg/1280px-White_shark.jpg"
+                    alt="Great white shark">
+                <div class="bg-tint"
+                    style="background:linear-gradient(to right,rgba(0,0,0,.06) 22%,rgba(4,14,30,.88) 62%,rgba(4,14,30,.97) 100%)">
+                </div>
+            </div>
+            <div class="panel-side-r">
+                <div class="tall-glass">
+                    <p class="eyebrow a1">Slide 9 — Fun Facts</p>
+                    <h2 class="h-large a2">Wow <em>Facts!</em></h2>
+                    <hr class="rule a3">
+                    <div class="igrid a4">
+                        <div class="icard"><span class="ico">💤</span>
+                            <div class="ib"><strong>Never Stop</strong>
+                                <p>Some sharks must keep swimming or they will suffocate!</p>
+                            </div>
+                        </div>
+                        <div class="icard"><span class="ico">👁️</span>
+                            <div class="ib"><strong>Roll Eyes</strong>
+                                <p>Great whites roll their eyes back to protect them when biting.</p>
+                            </div>
+                        </div>
+                        <div class="icard"><span class="ico">🦷</span>
+                            <div class="ib"><strong>30,000 Teeth</strong>
+                                <p>A shark can grow up to 30,000 teeth in its lifetime.</p>
+                            </div>
+                        </div>
+                        <div class="icard"><span class="ico">🎂</span>
+                            <div class="ib"><strong>Long Life</strong>
+                                <p>Greenland sharks can live for over 400 years!</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+ <!-- SLIDE 10 · THANK YOU — VIDEO BACKGROUND -->
+<section class="slide" data-index="9">
+    <div class="bg">
+        <video 
+            autoplay 
+            loop 
+            muted 
+            playsinline 
+            class="bg-video">
+            <source src="video/Untitled design.mp4" type="video/mp4">
+            <!-- Fallback image -->
+            <img src="img/pexels-ljnrnz-6530412.jpg" 
+                 alt="Whale shark swimming" 
+                 style="width:100%; height:100%; object-fit:cover;">
+        </video>
+        <div class="bg-tint"
+             style="background:radial-gradient(ellipse at center,rgba(0,0,0,.42) 0%,rgba(2,10,28,.88) 100%)">
+        </div>
+    </div>
+    
+    <div class="panel-center">
+        <div class="glass" style="max-width:700px">
+            <p class="eyebrow a1">Sophia Wilson · Student Presentation</p>
+            <h2 class="h-giant a2" style="font-size:clamp(3.4rem,8.5vw,8rem)">Thank<br><em>You!</em></h2>
+            <hr class="rule c a3">
+            <p class="sub a4">Any Questions? 🦈</p>
+            <div class="a5" style="margin-top:26px;display:flex;gap:9px;justify-content:center;flex-wrap:wrap">
+                <span style="padding:7px 17px;border:1px solid rgba(255,255,255,.18);border-radius:100px;font-size:clamp(.66rem,1.1vw,.86rem);color:rgba(255,255,255,.5);letter-spacing:.1em">🦈 Amazing Sharks</span>
+                <span style="padding:7px 17px;border:1.5px solid rgba(26,143,224,.5);border-radius:100px;font-size:clamp(.66rem,1.1vw,.86rem);color:var(--blue);letter-spacing:.1em">🌊 Ocean Predators</span>
+                <span style="padding:7px 17px;border:1px solid rgba(14,184,184,.4);border-radius:100px;font-size:clamp(.66rem,1.1vw,.86rem);color:var(--teal);letter-spacing:.1em">🔬 450 Million Years Old</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+    </div>
+
+    <script>
+const slides=Array.from(document.querySelectorAll('.slide'));
+const btnPrev=document.getElementById('btnPrev');
+const btnNext=document.getElementById('btnNext');
+const counter=document.getElementById('counter');
+const numEl=document.getElementById('slideNum');
+const total=slides.length;
+let cur=0,busy=false;
+
+slides.forEach((_,i)=>{
+  const d=document.createElement('button');
+  d.className='dot'+(i===0?' on':'');
+  d.setAttribute('aria-label','Go to slide '+(i+1));
+  d.addEventListener('click',()=>go(i));
+  counter.appendChild(d);
+});
+
+function ui(){
+  counter.querySelectorAll('.dot').forEach((d,i)=>d.classList.toggle('on',i===cur));
+  btnPrev.classList.toggle('hidden',cur===0);
+  btnNext.classList.toggle('hidden',cur===total-1);
+  numEl.textContent=(cur+1)+' / '+total;
+}
+
+function go(t){
+  if(busy||t===cur||t<0||t>=total)return;
+  busy=true;
+  const prev=cur;
+  slides[prev].classList.add('prev-out');
+  slides[t].classList.add('active');
+  cur=t;ui();
+  setTimeout(()=>{
+    slides[prev].classList.remove('active','prev-out');
+    busy=false;
+  },860);
+}
+
+btnPrev.addEventListener('click',()=>go(cur-1));
+btnNext.addEventListener('click',()=>go(cur+1));
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight'||e.key==='ArrowDown')go(cur+1);
+  if(e.key==='ArrowLeft'||e.key==='ArrowUp')go(cur-1);
+});
+let tx=null;
+document.addEventListener('touchstart',e=>{tx=e.touches[0].clientX},{passive:true});
+document.addEventListener('touchend',e=>{
+  if(tx===null)return;
+  if(Math.abs(e.changedTouches[0].clientX-tx)>50)go(e.changedTouches[0].clientX<tx?cur+1:cur-1);
+  tx=null;
+},{passive:true});
+
+ui();
+    </script>
+</body>
+
+</html>
